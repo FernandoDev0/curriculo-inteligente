@@ -1,0 +1,26 @@
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/">Currículo</a>
+    <nav class="nav" aria-label="Principal">
+      <a routerLink="/configuracao" routerLinkActive="is-here">Configuração</a>
+      <a routerLink="/diagnostico" routerLinkActive="is-here">Diagnóstico</a>
+      @if (sessions.current()?.authenticated) {
+        <a routerLink="/entrevistas" routerLinkActive="is-here">Entrevistas</a>
+        <a routerLink="/curriculos" routerLinkActive="is-here">Currículos</a>
+        <a routerLink="/conta" routerLinkActive="is-here">Conta</a>
+        <button type="button" class="nav-button" (click)="logout()" [disabled]="loggingOut()">
+          {{ loggingOut() ? 'Saindo…' : 'Sair' }}
+        </button>
+      } @else {
+        <a routerLink="/entrar" routerLinkActive="is-here">Entrar</a>
+      }
+    </nav>
+  </div>
+</header>
+@if (sessions.loadError()) {
+  <p class="page banner-error" role="alert">{{ sessions.loadError() }}</p>
+}
+<main id="conteudo">
+  <router-outlet />
+</main>

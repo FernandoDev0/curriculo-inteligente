@@ -1,0 +1,132 @@
+<article class="page">
+  <h1>Configuração da IA</h1>
+  <p class="lede">
+    A entrevista, o cadastro, a prévia e o PDF funcionam sem chave. A chave só entra quando você pede texto
+    gerado.
+  </p>
+
+  @if (loading()) {
+    <p role="status">Lendo a situação da chave…</p>
+  } @else if (loadError()) {
+    <p class="banner-error" role="alert">{{ loadError() }}</p>
+    <button type="button" class="btn-quiet" (click)="reload()">Tentar de novo</button>
+  } @else {
+    <section class="state-panel state-{{ displayState() }}" [attr.data-state]="displayState()">
+      <h2>{{ view().title }}</h2>
+      <p data-testid="setup-state">{{ view().detail }}</p>
+      <p>Chave configurada: {{ status()?.keyConfigured ? 'sim' : 'não' }}.</p>
+      <p>Origem: {{ sourceLabel() }}. Modelo informado: {{ status()?.model }}.</p>
+      <p>
+        Edição de imagem:
+        {{ status()?.imageEditingAvailable ? 'o modelo anuncia esse recurso' : 'não disponível neste modelo' }}.
+      </p>
+      @if (status()?.lastTestAt) {
+        <p>Último teste: {{ when(status()?.lastTestAt) }}.</p>
+      }
+      @if (status()?.lastTestMessage && status()?.lastTestMessage !== view().detail) {
+        <p>{{ status()?.lastTestMessage }}</p>
+      }
+    </section>
+  }
+
+  <h2>O que é uma API de IA</h2>
+  <p>
+    Uma API de IA é um serviço na internet que recebe um texto e devolve outro. Aqui o serviço é o Gemini, do
+    Google. O programa local manda o conteúdo profissional que você já gravou e recebe uma sugestão de frase.
+    Quem decide o que fica no currículo é você.
+  </p>
+
+  <h2>Por que a chave é necessária</h2>
+  <p>
+    O Google identifica a conta que paga, ou usa a faixa gratuita, por uma chave. Sem ela, o backend não chama
+    o provedor. Com ela, cada geração gasta cota de verdade. O teste de conexão também.
+  </p>
+
+  <h2>Como obter a chave</h2>
+  <ol>
+    <li>
+      Abra o
+      <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
+      e a
+      <a href="https://ai.google.dev/gemini-api/docs" target="_blank" rel="noopener noreferrer"
+        >documentação da API Gemini</a
+      >.
+    </li>
+    <li>Entre com a sua conta Google.</li>
+    <li>Crie uma chave de API no AI Studio.</li>
+    <li>Copie a chave com cuidado, sem espaço no começo ou no fim, e não a publique.</li>
+  </ol>
+
+  <h2>Opção A — variável de ambiente</h2>
+  <p>
+    Defina <code>GEMINI_API_KEY</code> no ambiente do backend, por exemplo no arquivo <code>.env</code> que não
+    entra no Git, e reinicie a API. Por este caminho a chave não passa por esta tela.
+  </p>
+
+  <h2>Opção B — este formulário</h2>
+  <p>
+    Cole a chave abaixo. Ela é enviada uma vez para <code>POST /api/v1/setup/api-key</code>, gravada fora do
+    banco, e o campo é limpo. Esta página não guarda a chave no navegador e não a mostra de volta.
+  </p>
+  <form (ngSubmit)="saveKey()" novalidate autocomplete="off">
+    <div class="field">
+      <label for="apiKey">Chave da API</label>
+      <input
+        id="apiKey"
+        type="password"
+        autocomplete="off"
+        spellcheck="false"
+        [formControl]="apiKey"
+      />
+      @if (apiKey.touched && apiKey.hasError('required')) {
+        <p class="field-error">Cole a chave para enviá-la.</p>
+      }
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn-signal" [disabled]="savingKey() || testing()">
+        {{ savingKey() ? 'Enviando…' : 'Enviar chave' }}
+      </button>
+      <button type="button" class="btn-quiet" (click)="removeKey()" [disabled]="removingKey() || savingKey()">
+        {{ removingKey() ? 'Removendo…' : 'Remover chave do arquivo' }}
+      </button>
+    </div>
+  </form>
+
+  <h2>Teste de conexão</h2>
+  <p>O teste pede o modelo e uma geração curta. Não é uma simulação: se a cota ou a chave falhar, a tela diz isso.</p>
+  <button type="button" class="btn-signal" (click)="test()" [disabled]="testing() || loading()">
+    {{ testing() ? 'Testando…' : 'Testar conexão' }}
+  </button>
+
+  @if (actionError()) {
+    <p class="banner-error" role="alert">{{ actionError() }}</p>
+  }
+  @if (actionNote()) {
+    <p class="banner-ok" role="status">{{ actionNote() }}</p>
+  }
+
+  <h2>Erros comuns</h2>
+  <ul>
+    <li><strong>Chave ausente.</strong> Nem o ambiente nem o arquivo têm chave.</li>
+    <li><strong>Ainda não testada.</strong> A chave foi gravada e o teste ainda não rodou.</li>
+    <li><strong>Cota.</strong> O provedor recusou por limite. Isso não é sucesso.</li>
+    <li><strong>Credencial inválida.</strong> A chave foi recusada. Gere outra e substitua.</li>
+    <li><strong>Conectividade.</strong> Esta máquina não alcançou o provedor.</li>
+    <li><strong>Indisponível.</strong> O modelo ou o serviço não respondeu a tempo.</li>
+    <li><strong>Consentimento.</strong> A geração pede o registro em Conta antes de enviar texto ao Google.</li>
+    <li><strong>Saída inválida.</strong> A resposta do modelo foi descartada. O seu texto permanece.</li>
+  </ul>
+
+  <h2>Limites</h2>
+  <p class="banner-warn">
+    Modelos, faixa gratuita e preços mudam e não são ilimitados. Confira a documentação oficial antes de contar
+    com um limite.
+  </p>
+
+  <hr class="rule" />
+  <p>
+    Dá para continuar sem IA. A entrevista guiada, o cadastro, a prévia e o PDF não precisam de chave. Precisam
+    da chave: reescrita, resumo gerado, aprofundamento adaptativo e a formulação da comparação com a vaga.
+  </p>
+  <p><a routerLink="/entrevistas">Continuar sem IA</a></p>
+</article>

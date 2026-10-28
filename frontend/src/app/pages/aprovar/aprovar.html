@@ -1,0 +1,193 @@
+<section class="page">
+  <h1>Aprovar e exportar</h1>
+  @if (loading() && !resume()) {
+    <p role="status">Carregando o currículo…</p>
+  } @else if (error() && !resume()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else if (resume(); as resume) {
+    <p>
+      {{ resume.title }} · {{ status(resume.status) }}
+      @if (resume.targetRole) {
+        · {{ resume.targetRole }}
+      }
+    </p>
+    <p><a [routerLink]="['/curriculo', resume.id, 'previa']">Ver a prévia</a></p>
+
+    <h2>Revisão</h2>
+    <p class="muted">
+      A comparação mostra o texto original e o revisado. A experiência só muda se você guardar. Sem chave ou sem
+      consentimento, a API recusa a revisão e o texto seu continua valendo.
+    </p>
+    <form [formGroup]="reviewForm" (ngSubmit)="review()" novalidate>
+      <div class="field">
+        <label for="section">Trecho</label>
+        <select id="section" formControlName="section" (change)="onReviewSection()">
+          <option value="SUMMARY">Resumo</option>
+          <option value="EXPERIENCE">Experiência</option>
+        </select>
+      </div>
+      @if (reviewForm.controls.section.value === 'EXPERIENCE') {
+        <div class="field">
+          <label for="experienceId">Experiência</label>
+          <select id="experienceId" formControlName="experienceId" (change)="useExperienceText()">
+            <option value="">Escolha</option>
+            @for (item of experiences(); track item.id) {
+              <option [value]="item.id">{{ item.company }} — {{ item.roleTitle }}</option>
+            }
+          </select>
+        </div>
+        <button type="button" class="btn-quiet" (click)="loadExperiences()" [disabled]="loadingExperiences()">
+          {{ loadingExperiences() ? 'Carregando…' : 'Atualizar experiências' }}
+        </button>
+      }
+      <div class="field">
+        <label for="reviewText">Texto</label>
+        <textarea id="reviewText" formControlName="text"></textarea>
+        @if (reviewForm.controls.text.touched && reviewForm.controls.text.hasError('required')) {
+          <p class="field-error">Escreva o texto que será revisado.</p>
+        }
+      </div>
+      <button type="submit" class="btn-signal" [disabled]="reviewing()">
+        {{ reviewing() ? 'Revisando…' : 'Pedir revisão' }}
+      </button>
+    </form>
+    @if (reviewError()) {
+      <p class="banner-error" role="alert">{{ reviewError() }}</p>
+    }
+    @if (revision(); as pair) {
+      <div class="compare">
+        <section class="card">
+          <h3>Texto original</h3>
+          <p>{{ pair.original }}</p>
+        </section>
+        <section class="card">
+          <h3>Texto revisado</h3>
+          <p>{{ pair.revised }}</p>
+        </section>
+      </div>
+      <button type="button" class="btn-quiet" (click)="applyRevision()" [disabled]="applying()">
+        {{ applying() ? 'Guardando…' : 'Guardar texto revisado' }}
+      </button>
+    }
+
+    <h2>Aprovação</h2>
+    <p>Aprovar grava a versão com os dados atuais. Nome e cargo precisam existir.</p>
+    <button type="button" class="btn-signal" (click)="approve()" [disabled]="approving()">
+      {{ approving() ? 'Aprovando…' : 'Aprovar currículo' }}
+    </button>
+    @if (approveError()) {
+      <p class="banner-error" role="alert">{{ approveError() }}</p>
+    }
+    @if (approveNote()) {
+      <p class="banner-ok" role="status">{{ approveNote() }}</p>
+    }
+
+    <h2>PDF definitivo</h2>
+    <p class="muted">O arquivo se chama curriculo.pdf e só é oferecido se o currículo estiver aprovado e couber em uma página.</p>
+    <button type="button" class="btn-signal" data-testid="export-pdf" (click)="exportPdf()" [disabled]="exporting()">
+      {{ exporting() ? 'Exportando…' : 'Exportar PDF definitivo' }}
+    </button>
+    @if (exported()) {
+      <p class="banner-ok" role="status">O arquivo curriculo.pdf foi gerado neste navegador.</p>
+    }
+    @if (exportError()) {
+      <p class="banner-error" role="alert" data-testid="export-error">{{ exportError() }}</p>
+    }
+    @if (exportPageCount() != null) {
+      <p>Páginas informadas: {{ exportPageCount() }}.</p>
+    }
+    @for (hint of exportHints(); track hint) {
+      <p>{{ hint }}</p>
+    }
+
+    <h2>Comparar com uma vaga</h2>
+    <p>
+      Isto não garante que um sistema de triagem (ATS) vá aceitar o currículo. A comparação lista o que o texto já
+      demonstra, o que é relacionado, o que não aparece e palavras já sustentadas. Nada é inventado para preencher o
+      que falta. A formulação assistida precisa da chave.
+    </p>
+    <form [formGroup]="jobForm" (ngSubmit)="runMatch()" novalidate>
+      <div class="field">
+        <label for="jobTitle">Cargo da vaga</label>
+        <input id="jobTitle" type="text" formControlName="title" />
+        @if (jobForm.controls.title.touched && jobForm.controls.title.hasError('required')) {
+          <p class="field-error">Informe o cargo da vaga.</p>
+        }
+      </div>
+      <div class="field">
+        <label for="jobCompany">Empresa</label>
+        <input id="jobCompany" type="text" formControlName="company" />
+      </div>
+      <div class="field">
+        <label for="jobDescription">Descrição da vaga</label>
+        <textarea id="jobDescription" formControlName="description"></textarea>
+        @if (jobForm.controls.description.touched && jobForm.controls.description.hasError('required')) {
+          <p class="field-error">Cole a descrição da vaga.</p>
+        }
+      </div>
+      <button type="submit" class="btn-quiet" [disabled]="matching()">
+        {{ matching() ? 'Comparando…' : 'Comparar com o currículo' }}
+      </button>
+    </form>
+    @if (matchError()) {
+      <p class="banner-error" role="alert">{{ matchError() }}</p>
+    }
+    @if (match(); as match) {
+      <div class="grid-2">
+        <section class="card">
+          <h3>Já demonstrado</h3>
+          @if (match.demonstrated.length === 0) {
+            <p>Nenhum item nesta lista.</p>
+          } @else {
+            <ul>
+              @for (item of match.demonstrated; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+        <section class="card">
+          <h3>Relacionado</h3>
+          @if (match.related.length === 0) {
+            <p>Nenhum item nesta lista.</p>
+          } @else {
+            <ul>
+              @for (item of match.related; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+        <section class="card">
+          <h3>Sem comprovação</h3>
+          @if (match.missing.length === 0) {
+            <p>Nenhum item nesta lista.</p>
+          } @else {
+            <ul>
+              @for (item of match.missing; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+        <section class="card">
+          <h3>Palavras já sustentadas</h3>
+          @if (match.keywords.length === 0) {
+            <p>Nenhum item nesta lista.</p>
+          } @else {
+            <ul>
+              @for (item of match.keywords; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+      @if (match.suggestions) {
+        <p>{{ match.suggestions }}</p>
+      }
+      <p class="banner-warn">Esta comparação não garante que um ATS vá aceitar o currículo.</p>
+    }
+  }
+</section>

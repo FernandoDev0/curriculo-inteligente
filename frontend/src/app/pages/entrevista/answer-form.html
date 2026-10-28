@@ -1,0 +1,19 @@
+<form [formGroup]="form" (ngSubmit)="send()" novalidate>
+  <div class="field">
+    <label for="resposta">Resposta</label>
+    <textarea id="resposta" rows="6" formControlName="content"></textarea>
+    @if (form.controls.content.touched && form.controls.content.hasError('required')) {
+      <p class="field-error">Escreva a resposta antes de enviar.</p>
+    }
+  </div>
+  <div class="actions">
+    <button type="submit" class="btn-signal" [disabled]="disabled()">
+      {{ disabled() ? 'Enviando…' : 'Enviar resposta' }}
+    </button>
+    @if (canSkip()) {
+      <button type="button" data-testid="skip" class="btn-quiet" (click)="skip()" [disabled]="disabled()">
+        Pular
+      </button>
+    }
+  </div>
+</form>

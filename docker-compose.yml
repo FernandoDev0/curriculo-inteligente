@@ -1,0 +1,22 @@
+# PostgreSQL local. Nao publique a porta fora da maquina.
+# A porta fica ligada a 127.0.0.1 de proposito.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: curriculo-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-curriculo}
+      POSTGRES_USER: ${POSTGRES_USER:-curriculo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no arquivo .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - curriculo_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-curriculo} -d ${POSTGRES_DB:-curriculo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  curriculo_pg:

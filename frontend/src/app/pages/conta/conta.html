@@ -1,0 +1,78 @@
+<section class="page">
+  <h1>Conta</h1>
+  @if (sessions.current()?.email) {
+    <p>Conta local: {{ sessions.current()?.email }}</p>
+  }
+
+  @if (loading()) {
+    <p role="status">Carregando a conta…</p>
+  } @else if (error() && !profile()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else if (profile(); as profile) {
+    <h2>Consentimento para a IA</h2>
+    <p>
+      Antes de qualquer geração, o conteúdo profissional que você gravou — experiências, resumo e descrição de vaga
+      — pode ser enviado ao Google para produzir texto. A chave fica no servidor. O programa não usa a resposta da
+      IA como decisão de contratação. Sem este registro, reescrita, resumo gerado, aprofundamento adaptativo e a
+      formulação da comparação com a vaga não rodam.
+    </p>
+    @if (profile.aiConsentAt) {
+      <p class="banner-ok">Consentimento registrado em {{ when(profile.aiConsentAt) }}.</p>
+    }
+    <button type="button" class="btn-signal" (click)="consent()" [disabled]="consenting()">
+      {{ consenting() ? 'Registrando…' : profile.aiConsentAt ? 'Registrar de novo' : 'Registrar consentimento' }}
+    </button>
+    @if (consentError()) {
+      <p class="banner-error" role="alert">{{ consentError() }}</p>
+    }
+
+    <h2>Foto</h2>
+    <p class="muted">Opcional. JPEG, PNG ou WebP, até 5 MB. A imagem é regravada e o EXIF sai. Sem foto, o currículo segue normal.</p>
+    @if (profile.hasPhoto) {
+      <img [src]="photoSrc()" alt="Foto enviada" width="120" height="144" />
+      <p>{{ profile.photoApproved ? 'Foto aprovada.' : 'Foto ainda não aprovada para o currículo.' }}</p>
+    } @else {
+      <p>Nenhuma foto enviada.</p>
+    }
+    <div class="field">
+      <label for="foto">Arquivo de foto</label>
+      <input id="foto" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" (change)="onPhoto($event)" />
+    </div>
+    <div class="actions">
+      @if (profile.hasPhoto && !profile.photoApproved) {
+        <button type="button" class="btn-quiet" (click)="approvePhoto()" [disabled]="uploading()">
+          {{ uploading() ? 'Enviando…' : 'Aprovar foto' }}
+        </button>
+      }
+      @if (profile.hasPhoto) {
+        <button type="button" class="btn-danger" (click)="removePhoto()" [disabled]="uploading()">Remover foto</button>
+      }
+    </div>
+    @if (photoError()) {
+      <p class="banner-error" role="alert">{{ photoError() }}</p>
+    }
+    @if (photoNote()) {
+      <p class="banner-ok" role="status">{{ photoNote() }}</p>
+    }
+
+    <hr class="rule" />
+    <h2>Apagar a conta</h2>
+    <p>
+      Apaga o usuário, o perfil, as experiências, os currículos, as entrevistas, as vagas e as fotos. Não há como
+      desfazer.
+    </p>
+    <form (ngSubmit)="deleteAccount()" novalidate>
+      <div class="field">
+        <label for="confirmacao">Digite APAGAR para confirmar</label>
+        <input id="confirmacao" type="text" autocomplete="off" [formControl]="confirmation" />
+      </div>
+      <button type="submit" class="btn-danger" [disabled]="deleting() || confirmation.value !== 'APAGAR'">
+        {{ deleting() ? 'Apagando…' : 'Apagar conta e dados' }}
+      </button>
+    </form>
+    @if (deleteError()) {
+      <p class="banner-error" role="alert">{{ deleteError() }}</p>
+    }
+  }
+</section>

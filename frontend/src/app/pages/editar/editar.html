@@ -1,0 +1,573 @@
+<section class="page">
+  <h1>Editar currículo</h1>
+  @if (loading()) {
+    <p role="status">Carregando os dados…</p>
+  } @else if (error() && !resume()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else {
+    <div class="actions">
+      <a [routerLink]="['/curriculo', resumeId(), 'previa']">Prévia</a>
+      <a [routerLink]="['/curriculo', resumeId(), 'aprovar']">Aprovar</a>
+      <a routerLink="/conta">Foto e consentimento</a>
+    </div>
+    <p class="muted">A foto é opcional e se envia em Conta. Sugestões de competência nascem desmarcadas.</p>
+
+    <h2>Dados pessoais</h2>
+    <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fullName">Nome completo</label>
+          <input id="fullName" type="text" formControlName="fullName" autocomplete="name" />
+          @if (profileForm.controls.fullName.touched && profileForm.controls.fullName.hasError('required')) {
+            <p class="field-error">Informe o nome.</p>
+          }
+        </div>
+        <div class="field">
+          <label for="targetRole">Cargo desejado</label>
+          <input id="targetRole" type="text" formControlName="targetRole" />
+        </div>
+        <div class="field">
+          <label for="currentProfession">Profissão atual</label>
+          <input id="currentProfession" type="text" formControlName="currentProfession" />
+        </div>
+        <div class="field">
+          <label for="city">Cidade</label>
+          <input id="city" type="text" formControlName="city" />
+        </div>
+        <div class="field">
+          <label for="state">Estado</label>
+          <input id="state" type="text" formControlName="state" />
+        </div>
+        <div class="field">
+          <label for="professionalEmail">E-mail profissional</label>
+          <input id="professionalEmail" type="email" formControlName="professionalEmail" autocomplete="email" />
+          @if (profileForm.controls.professionalEmail.touched && profileForm.controls.professionalEmail.hasError('email')) {
+            <p class="field-error">Informe um e-mail válido.</p>
+          }
+        </div>
+        <div class="field">
+          <label for="phone">Telefone</label>
+          <input id="phone" type="tel" formControlName="phone" autocomplete="tel" />
+        </div>
+        <div class="field">
+          <label for="workMode">Disponibilidade</label>
+          <select id="workMode" formControlName="workMode">
+            <option value="">Não informar</option>
+            <option value="REMOTE">Remoto</option>
+            <option value="HYBRID">Híbrido</option>
+            <option value="ONSITE">Presencial</option>
+            <option value="FLEXIBLE">Flexível</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="linkedinUrl">LinkedIn</label>
+          <input id="linkedinUrl" type="url" formControlName="linkedinUrl" />
+        </div>
+        <div class="field">
+          <label for="githubUrl">GitHub</label>
+          <input id="githubUrl" type="url" formControlName="githubUrl" />
+        </div>
+        <div class="field">
+          <label for="portfolioUrl">Portfólio</label>
+          <input id="portfolioUrl" type="url" formControlName="portfolioUrl" />
+        </div>
+        <div class="field">
+          <label for="otherProfessionalLinks">Outros links profissionais</label>
+          <input id="otherProfessionalLinks" type="text" formControlName="otherProfessionalLinks" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="targetOpportunity">Vaga ou empresa de interesse</label>
+        <input id="targetOpportunity" type="text" formControlName="targetOpportunity" />
+      </div>
+      <label class="check">
+        <input type="checkbox" formControlName="includeAge" />
+        <span>Incluir idade no currículo</span>
+      </label>
+      @if (profileForm.controls.includeAge.value) {
+        <div class="field">
+          <label for="age">Idade</label>
+          <input id="age" type="number" formControlName="age" min="14" max="100" />
+          @if (profileForm.controls.age.hasError('server')) {
+            <p class="field-error">{{ profileForm.controls.age.getError('server') }}</p>
+          }
+        </div>
+      }
+      <label class="check">
+        <input type="checkbox" formControlName="careerChange" />
+        <span>Estou mudando de profissão</span>
+      </label>
+      @if (profileForm.controls.careerChange.value) {
+        <div class="field">
+          <label for="desiredProfession">Profissão desejada</label>
+          <input id="desiredProfession" type="text" formControlName="desiredProfession" />
+        </div>
+        <div class="field">
+          <label for="careerChangeReason">Motivo da transição</label>
+          <textarea id="careerChangeReason" formControlName="careerChangeReason"></textarea>
+        </div>
+      }
+      <button type="submit" class="btn-signal" [disabled]="savingProfile()">
+        {{ savingProfile() ? 'Salvando…' : 'Salvar dados pessoais' }}
+      </button>
+      @if (profileError()) {
+        <p class="banner-error" role="alert">{{ profileError() }}</p>
+      }
+      @if (profileNote()) {
+        <p class="banner-ok" role="status">{{ profileNote() }}</p>
+      }
+    </form>
+
+    <h2>Resumo</h2>
+    <p class="muted">Modelo: {{ resumeForm.controls.templateCode.value }}. A geração automática precisa de chave e consentimento.</p>
+    <form [formGroup]="resumeForm" (ngSubmit)="saveResume()" novalidate>
+      <div class="field">
+        <label for="title">Título interno</label>
+        <input id="title" type="text" formControlName="title" />
+        @if (resumeForm.controls.title.touched && resumeForm.controls.title.hasError('required')) {
+          <p class="field-error">Informe o título.</p>
+        }
+      </div>
+      <div class="field">
+        <label for="resumeRole">Cargo neste currículo</label>
+        <input id="resumeRole" type="text" formControlName="targetRole" />
+      </div>
+      <div class="field">
+        <label for="summaryDraft">Resumo profissional</label>
+        <textarea id="summaryDraft" formControlName="summaryDraft"></textarea>
+      </div>
+      <label class="check">
+        <input type="checkbox" formControlName="includePhoto" />
+        <span>Incluir a foto aprovada</span>
+      </label>
+      <div class="actions">
+        <button type="submit" class="btn-signal" [disabled]="savingResume()">
+          {{ savingResume() ? 'Salvando…' : 'Salvar resumo' }}
+        </button>
+        <button type="button" class="btn-quiet" (click)="generateSummary()" [disabled]="generating()">
+          {{ generating() ? 'Gerando…' : 'Gerar outra versão do resumo' }}
+        </button>
+      </div>
+    </form>
+    @if (resumeError()) {
+      <p class="banner-error" role="alert">{{ resumeError() }}</p>
+    }
+    @if (resumeNote()) {
+      <p class="banner-ok" role="status">{{ resumeNote() }}</p>
+    }
+    @if (revision(); as pair) {
+      <div class="compare">
+        <section class="card">
+          <h3>Texto original</h3>
+          <p>{{ pair.original }}</p>
+        </section>
+        <section class="card">
+          <h3>Texto revisado</h3>
+          <p>{{ pair.revised }}</p>
+        </section>
+      </div>
+    }
+
+    <h2>Experiências</h2>
+    @if (experiences().length === 0) {
+      <p>Nenhuma experiência ainda.</p>
+    }
+    @for (item of experiences(); track item.id; let index = $index) {
+      <article class="card list-item">
+        <h3>{{ item.company }} — {{ item.roleTitle }}</h3>
+        <p>{{ period(item) }} · {{ preference(item.detailPreference) }}</p>
+        <div class="actions">
+          <button type="button" class="btn-quiet" (click)="editExperience(item)">Editar</button>
+          <button type="button" class="btn-quiet" (click)="moveExperience(index, -1)" [disabled]="index === 0">Subir</button>
+          <button type="button" class="btn-quiet" (click)="moveExperience(index, 1)" [disabled]="index === experiences().length - 1">
+            Descer
+          </button>
+          <button type="button" class="btn-danger" (click)="askDelete('experience', item.id, item.company)">Remover</button>
+        </div>
+      </article>
+    }
+    <button type="button" class="btn-quiet" (click)="openExperience()">Adicionar experiência</button>
+    @if (experienceOpen()) {
+      <form [formGroup]="experienceForm" (ngSubmit)="saveExperience()" novalidate>
+        <div class="grid-2">
+          <div class="field">
+            <label for="company">Empresa</label>
+            <input id="company" type="text" formControlName="company" />
+            @if (experienceForm.controls.company.touched && experienceForm.controls.company.hasError('required')) {
+              <p class="field-error">Informe a empresa.</p>
+            }
+          </div>
+          <div class="field">
+            <label for="roleTitle">Cargo</label>
+            <input id="roleTitle" type="text" formControlName="roleTitle" />
+            @if (experienceForm.controls.roleTitle.touched && experienceForm.controls.roleTitle.hasError('required')) {
+              <p class="field-error">Informe o cargo.</p>
+            }
+          </div>
+          <div class="field">
+            <label for="startMonth">Mês de início</label>
+            <input id="startMonth" type="number" min="1" max="12" formControlName="startMonth" />
+          </div>
+          <div class="field">
+            <label for="startYear">Ano de início</label>
+            <input id="startYear" type="number" formControlName="startYear" />
+            @if (experienceForm.controls.startYear.touched && experienceForm.controls.startYear.invalid) {
+              <p class="field-error">Informe o ano de início, entre 1950 e 2100.</p>
+            }
+          </div>
+          <div class="field">
+            <label for="endMonth">Mês de fim</label>
+            <input id="endMonth" type="number" min="1" max="12" formControlName="endMonth" />
+          </div>
+          <div class="field">
+            <label for="endYear">Ano de fim</label>
+            <input id="endYear" type="number" formControlName="endYear" />
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" formControlName="currentJob" /><span>Emprego atual</span></label>
+        <div class="field">
+          <label for="projectLabel">Projeto</label>
+          <input id="projectLabel" type="text" formControlName="projectLabel" />
+        </div>
+        <div class="field">
+          <label for="responsibilities">Atividades</label>
+          <textarea id="responsibilities" formControlName="responsibilities"></textarea>
+        </div>
+        <div class="field">
+          <label for="tools">Ferramentas</label>
+          <textarea id="tools" formControlName="tools"></textarea>
+        </div>
+        <div class="field">
+          <label for="results">Resultados</label>
+          <textarea id="results" formControlName="results"></textarea>
+        </div>
+        <div class="field">
+          <label for="notes">Notas</label>
+          <textarea id="notes" formControlName="notes"></textarea>
+        </div>
+        <div class="field">
+          <label for="detailPreference">Detalhe na página</label>
+          <select id="detailPreference" formControlName="detailPreference">
+            <option value="AUTO">Automático</option>
+            <option value="DETAILED">Detalhada</option>
+            <option value="SUMMARY">Resumida</option>
+            <option value="HIDDEN">Oculta</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-signal" [disabled]="savingExperience()">
+            {{ savingExperience() ? 'Salvando…' : 'Salvar experiência' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="experienceOpen.set(false)">Cancelar</button>
+        </div>
+      </form>
+    }
+    @if (experienceError()) {
+      <p class="banner-error" role="alert">{{ experienceError() }}</p>
+    }
+    @if (experienceNote()) {
+      <p class="banner-ok" role="status">{{ experienceNote() }}</p>
+    }
+
+    <h2>Competências</h2>
+    <p class="muted">Uma sugestão só entra no currículo quando você marca a caixa.</p>
+    @if (skills().length === 0) {
+      <p>Nenhuma competência ainda.</p>
+    }
+    @for (skill of skills(); track skill.id) {
+      <article class="list-item">
+        <label class="check">
+          <input
+            type="checkbox"
+            [checked]="skill.confirmed"
+            [disabled]="savingSkillId() === skill.id"
+            (change)="confirmSkill(skill, $event)"
+          />
+          <span>{{ skill.name }} · {{ category(skill.category) }}</span>
+        </label>
+        @if (skill.origin === 'SUGGESTED' && !skill.confirmed) {
+          <p class="muted">Sugestão — marque para confirmar.</p>
+        }
+        <button type="button" class="btn-danger" (click)="askDelete('skill', skill.id, skill.name)">Remover</button>
+      </article>
+    }
+    <form [formGroup]="skillForm" (ngSubmit)="saveSkill()" novalidate>
+      <div class="grid-2">
+        <div class="field">
+          <label for="skillName">Nova competência</label>
+          <input id="skillName" type="text" formControlName="name" />
+        </div>
+        <div class="field">
+          <label for="skillCategory">Categoria</label>
+          <select id="skillCategory" formControlName="category">
+            <option value="TECHNICAL">Técnica</option>
+            <option value="TOOL">Ferramenta</option>
+            <option value="DOMAIN">Domínio</option>
+            <option value="BEHAVIORAL">Comportamental</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-signal" [disabled]="savingSkill()">
+          {{ savingSkill() ? 'Salvando…' : 'Adicionar competência' }}
+        </button>
+        <button type="button" class="btn-quiet" (click)="suggestSkills()" [disabled]="suggesting()">
+          {{ suggesting() ? 'Sugerindo…' : 'Sugerir a partir do histórico' }}
+        </button>
+      </div>
+    </form>
+    @if (skillError()) {
+      <p class="banner-error" role="alert">{{ skillError() }}</p>
+    }
+    @if (skillNote()) {
+      <p class="banner-ok" role="status">{{ skillNote() }}</p>
+    }
+
+    <h2>Formação</h2>
+    @if (educationItems().length === 0) {
+      <p>Nenhuma formação ainda.</p>
+    }
+    @for (item of educationItems(); track item.id; let index = $index) {
+      <article class="card list-item">
+        <h3>{{ item.level }}</h3>
+        <p>{{ item.course }} · {{ item.institution }} · {{ educationStatus(item.status) }}</p>
+        <div class="actions">
+          <button type="button" class="btn-quiet" (click)="editEducation(item)">Editar</button>
+          <button type="button" class="btn-quiet" (click)="moveEducation(index, -1)" [disabled]="index === 0">Subir</button>
+          <button type="button" class="btn-quiet" (click)="moveEducation(index, 1)" [disabled]="index === educationItems().length - 1">
+            Descer
+          </button>
+          <button type="button" class="btn-danger" (click)="askDelete('education', item.id, item.level)">Remover</button>
+        </div>
+      </article>
+    }
+    <button type="button" class="btn-quiet" (click)="openEducation()">Adicionar formação</button>
+    @if (educationOpen()) {
+      <form [formGroup]="educationForm" (ngSubmit)="saveEducation()" novalidate>
+        <div class="field">
+          <label for="level">Nível</label>
+          <input id="level" type="text" formControlName="level" />
+        </div>
+        <div class="field">
+          <label for="course">Curso</label>
+          <input id="course" type="text" formControlName="course" />
+        </div>
+        <div class="field">
+          <label for="institution">Instituição</label>
+          <input id="institution" type="text" formControlName="institution" />
+        </div>
+        <div class="field">
+          <label for="eduStatus">Situação</label>
+          <select id="eduStatus" formControlName="status">
+            <option value="COMPLETED">Concluído</option>
+            <option value="IN_PROGRESS">Em andamento</option>
+            <option value="INTERRUPTED">Interrompido</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="eduStart">Ano de início</label>
+            <input id="eduStart" type="number" formControlName="startYear" />
+          </div>
+          <div class="field">
+            <label for="eduEnd">Ano de conclusão ou previsão</label>
+            <input id="eduEnd" type="number" formControlName="endYear" />
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-signal" [disabled]="savingEducation()">
+            {{ savingEducation() ? 'Salvando…' : 'Salvar formação' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="educationOpen.set(false)">Cancelar</button>
+        </div>
+      </form>
+    }
+    @if (educationError()) {
+      <p class="banner-error" role="alert">{{ educationError() }}</p>
+    }
+
+    <h2>Certificações</h2>
+    @if (certifications().length === 0) {
+      <p>Nenhuma certificação ainda.</p>
+    }
+    @for (item of certifications(); track item.id) {
+      <article class="list-item">
+        <p>{{ item.name }}@if (item.issuer) { · {{ item.issuer }} }@if (item.year) { · {{ item.year }} }</p>
+        <div class="actions">
+          <button type="button" class="btn-quiet" (click)="editCertification(item)">Editar</button>
+          <button type="button" class="btn-danger" (click)="askDelete('certification', item.id, item.name)">Remover</button>
+        </div>
+      </article>
+    }
+    <button type="button" class="btn-quiet" (click)="openCertification()">Adicionar certificação</button>
+    @if (certificationOpen()) {
+      <form [formGroup]="certificationForm" (ngSubmit)="saveCertification()" novalidate>
+        <div class="field">
+          <label for="certName">Nome</label>
+          <input id="certName" type="text" formControlName="name" />
+        </div>
+        <div class="field">
+          <label for="issuer">Emissor</label>
+          <input id="issuer" type="text" formControlName="issuer" />
+        </div>
+        <div class="field">
+          <label for="certYear">Ano</label>
+          <input id="certYear" type="number" formControlName="year" />
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-signal" [disabled]="savingCertification()">
+            {{ savingCertification() ? 'Salvando…' : 'Salvar certificação' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="certificationOpen.set(false)">Cancelar</button>
+        </div>
+      </form>
+    }
+    @if (certificationError()) {
+      <p class="banner-error" role="alert">{{ certificationError() }}</p>
+    }
+
+    <h2>Idiomas</h2>
+    @if (languages().length === 0) {
+      <p>Nenhum idioma ainda.</p>
+    }
+    @for (item of languages(); track item.id) {
+      <article class="list-item">
+        <p>
+          <strong>{{ item.name }}.</strong>
+          Compreensão: {{ level(item.comprehension) }}. Leitura: {{ level(item.reading) }}. Escrita:
+          {{ level(item.writing) }}. Conversação: {{ level(item.conversation) }}.
+        </p>
+        <div class="actions">
+          <button type="button" class="btn-quiet" (click)="editLanguage(item)">Editar</button>
+          <button type="button" class="btn-danger" (click)="askDelete('language', item.id, item.name)">Remover</button>
+        </div>
+      </article>
+    }
+    <button type="button" class="btn-quiet" (click)="openLanguage()">Adicionar idioma</button>
+    @if (languageOpen()) {
+      <form [formGroup]="languageForm" (ngSubmit)="saveLanguage()" novalidate>
+        <div class="field">
+          <label for="languageName">Idioma</label>
+          <input id="languageName" type="text" formControlName="name" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="comprehension">Compreensão</label>
+            <select id="comprehension" formControlName="comprehension">
+              <option value="">Não informado</option>
+              <option value="BASIC">Básico</option>
+              <option value="INTERMEDIATE">Intermediário</option>
+              <option value="ADVANCED">Avançado</option>
+              <option value="FLUENT">Fluente</option>
+              <option value="NATIVE">Nativo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reading">Leitura</label>
+            <select id="reading" formControlName="reading">
+              <option value="">Não informado</option>
+              <option value="BASIC">Básico</option>
+              <option value="INTERMEDIATE">Intermediário</option>
+              <option value="ADVANCED">Avançado</option>
+              <option value="FLUENT">Fluente</option>
+              <option value="NATIVE">Nativo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="writing">Escrita</label>
+            <select id="writing" formControlName="writing">
+              <option value="">Não informado</option>
+              <option value="BASIC">Básico</option>
+              <option value="INTERMEDIATE">Intermediário</option>
+              <option value="ADVANCED">Avançado</option>
+              <option value="FLUENT">Fluente</option>
+              <option value="NATIVE">Nativo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="conversation">Conversação</label>
+            <select id="conversation" formControlName="conversation">
+              <option value="">Não informado</option>
+              <option value="BASIC">Básico</option>
+              <option value="INTERMEDIATE">Intermediário</option>
+              <option value="ADVANCED">Avançado</option>
+              <option value="FLUENT">Fluente</option>
+              <option value="NATIVE">Nativo</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-signal" [disabled]="savingLanguage()">
+            {{ savingLanguage() ? 'Salvando…' : 'Salvar idioma' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="languageOpen.set(false)">Cancelar</button>
+        </div>
+      </form>
+    }
+    @if (languageError()) {
+      <p class="banner-error" role="alert">{{ languageError() }}</p>
+    }
+
+    <h2>Projetos</h2>
+    @if (projects().length === 0) {
+      <p>Nenhum projeto ainda. Projeto pessoal não vira emprego.</p>
+    }
+    @for (item of projects(); track item.id; let index = $index) {
+      <article class="card list-item">
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.personal ? 'Pessoal' : 'Não pessoal' }}</p>
+        <div class="actions">
+          <button type="button" class="btn-quiet" (click)="editProject(item)">Editar</button>
+          <button type="button" class="btn-quiet" (click)="moveProjects(index, -1)" [disabled]="index === 0">Subir</button>
+          <button type="button" class="btn-quiet" (click)="moveProjects(index, 1)" [disabled]="index === projects().length - 1">
+            Descer
+          </button>
+          <button type="button" class="btn-danger" (click)="askDelete('project', item.id, item.name)">Remover</button>
+        </div>
+      </article>
+    }
+    <button type="button" class="btn-quiet" (click)="openProject()">Adicionar projeto</button>
+    @if (projectOpen()) {
+      <form [formGroup]="projectForm" (ngSubmit)="saveProject()" novalidate>
+        <div class="field">
+          <label for="projectName">Nome</label>
+          <input id="projectName" type="text" formControlName="name" />
+        </div>
+        <div class="field">
+          <label for="projectDescription">Descrição</label>
+          <textarea id="projectDescription" formControlName="description"></textarea>
+        </div>
+        <div class="field">
+          <label for="projectUrl">URL</label>
+          <input id="projectUrl" type="url" formControlName="url" />
+        </div>
+        <label class="check"><input type="checkbox" formControlName="personal" /><span>Projeto pessoal</span></label>
+        <div class="actions">
+          <button type="submit" class="btn-signal" [disabled]="savingProject()">
+            {{ savingProject() ? 'Salvando…' : 'Salvar projeto' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="projectOpen.set(false)">Cancelar</button>
+        </div>
+      </form>
+    }
+    @if (projectError()) {
+      <p class="banner-error" role="alert">{{ projectError() }}</p>
+    }
+
+    @if (pending(); as choice) {
+      <section class="card" role="alert">
+        <p>Apagar {{ choice.label }}? Esta ação não desfaz.</p>
+        @if (sectionError()) {
+          <p class="banner-error">{{ sectionError() }}</p>
+        }
+        <div class="actions">
+          <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleting()">
+            {{ deleting() ? 'Apagando…' : 'Confirmar exclusão' }}
+          </button>
+          <button type="button" class="btn-quiet" (click)="pending.set(null)" [disabled]="deleting()">Cancelar</button>
+        </div>
+      </section>
+    }
+  }
+</section>

@@ -1,0 +1,49 @@
+<section class="page">
+  <h1>Currículos</h1>
+  <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <div class="field">
+      <label for="titulo">Título do novo currículo</label>
+      <input id="titulo" type="text" formControlName="title" />
+      @if (form.controls.title.touched && form.controls.title.hasError('required')) {
+        <p class="field-error">Informe um título.</p>
+      }
+    </div>
+    <button type="submit" class="btn-signal" [disabled]="creating()">
+      {{ creating() ? 'Criando…' : 'Criar currículo' }}
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p role="status">Carregando currículos…</p>
+  } @else if (error()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load(page())">Tentar de novo</button>
+  } @else if (items().length === 0) {
+    <p>Nenhum currículo ainda. A entrevista também pode gerar um rascunho.</p>
+  } @else {
+    @for (item of items(); track item.id) {
+      <article class="card list-item">
+        <h2>{{ item.title }}</h2>
+        <p>{{ status(item.status) }}@if (item.targetRole) { · {{ item.targetRole }} }</p>
+        @if (item.updatedAt || item.createdAt) {
+          <p class="muted">{{ when(item.updatedAt || item.createdAt) }}</p>
+        }
+        <div class="actions">
+          <a [routerLink]="['/curriculo', item.id, 'previa']">Prévia</a>
+          <a [routerLink]="['/curriculo', item.id, 'editar']">Editar</a>
+          <a [routerLink]="['/curriculo', item.id, 'aprovar']">Aprovar</a>
+        </div>
+      </article>
+    }
+    @if (totalPages() > 1) {
+      <div class="actions">
+        <button type="button" class="btn-quiet" (click)="load(page() - 1)" [disabled]="page() === 0">
+          Página anterior
+        </button>
+        <button type="button" class="btn-quiet" (click)="load(page() + 1)" [disabled]="page() + 1 >= totalPages()">
+          Próxima página
+        </button>
+      </div>
+    }
+  }
+</section>

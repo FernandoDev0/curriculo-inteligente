@@ -1,0 +1,132 @@
+<section class="page">
+  @if (loading() && !interview()) {
+    <p role="status">Carregando a entrevista…</p>
+  } @else if (error() && !interview()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else if (interview(); as interview) {
+    <p class="muted">{{ status(interview.status) }} · {{ stage(interview.stage) }}</p>
+    <p>Progresso: {{ interview.progressPercent }}%</p>
+    <div class="meter" aria-hidden="true"><span [style.width.%]="interview.progressPercent"></span></div>
+
+    <div class="interview-layout">
+      <div>
+        @if (interview.currentQuestion; as question) {
+          <h1 class="question">{{ question.text }}</h1>
+          <app-answer-form
+            [canSkip]="question.canSkip === true"
+            [disabled]="sending()"
+            [nonce]="nonce()"
+            (answered)="onAnswer($event)"
+          />
+        } @else if (interview.status === 'COMPLETED') {
+          <h1 class="question">A IA corrige o que você contou</h1>
+          <p>
+            A entrevista acabou. O próximo passo é a inteligência artificial reescrever suas experiências e criar o
+            resumo do currículo, sem inventar cargo, data ou resultado.
+          </p>
+          <p class="muted">
+            Ao continuar, você autoriza o envio dessas respostas ao Gemini para essa reescrita.
+          </p>
+          <button type="button" class="btn-signal" (click)="improve()" [disabled]="improving()">
+            {{ improving() ? 'A IA está escrevendo o currículo…' : 'Melhorar meu currículo com IA' }}
+          </button>
+          @if (improvement(); as result) {
+            <section class="card">
+              <h2>Resumo escrito pela IA</h2>
+              @if (result.summary) {
+                <p>{{ result.summary }}</p>
+              } @else {
+                <p class="banner-warn">{{ result.note }}</p>
+              }
+              <p><a [routerLink]="['/curriculo', result.resumeId, 'previa']">Ver o currículo</a></p>
+            </section>
+            @for (piece of result.experiences; track piece.company + piece.roleTitle) {
+              <div class="compare">
+                <section class="card">
+                  <h3>{{ piece.company }} — como você contou</h3>
+                  <p>{{ piece.original }}</p>
+                </section>
+                <section class="card">
+                  <h3>{{ piece.roleTitle }} — texto do currículo</h3>
+                  <p>{{ piece.revised }}</p>
+                  @if (piece.keptOriginal) {
+                    <p class="muted">A revisão foi recusada porque trazia algo que você não disse. Ficou o seu texto.</p>
+                  }
+                </section>
+              </div>
+            }
+          }
+        } @else {
+          <h1 class="question">A entrevista não tem uma pergunta aberta.</h1>
+        }
+
+        @if (error()) {
+          <p class="banner-error" role="alert">{{ error() }}</p>
+        }
+
+        <div class="actions">
+          @if (interview.status === 'IN_PROGRESS') {
+            <button type="button" class="btn-quiet" (click)="pause()" [disabled]="pausing()">
+              {{ pausing() ? 'Pausando…' : 'Pausar' }}
+            </button>
+          }
+          @if (interview.status === 'PAUSED') {
+            <button type="button" class="btn-quiet" (click)="resume()" [disabled]="pausing()">
+              {{ pausing() ? 'Retomando…' : 'Retomar' }}
+            </button>
+          }
+          @if (interview.status === 'PAUSED') {
+            <button type="button" class="btn-quiet" (click)="draft()" [disabled]="drafting()">
+              {{ drafting() ? 'Gravando…' : 'Gerar rascunho sem IA' }}
+            </button>
+          }
+          <a [routerLink]="['/entrevista', interview.id, 'historico']">Corrigir uma resposta anterior</a>
+        </div>
+
+        @if (!confirmingDiscard()) {
+          <p>
+            <button type="button" class="btn-danger" (click)="confirmingDiscard.set(true)">Descartar entrevista</button>
+          </p>
+        } @else {
+          <p>Descartar apaga as mensagens desta entrevista. Confirme só se for isso mesmo.</p>
+          <div class="actions">
+            <button type="button" class="btn-danger" (click)="discard()" [disabled]="discarding()">
+              {{ discarding() ? 'Descartando…' : 'Confirmar descarte' }}
+            </button>
+            <button type="button" class="btn-quiet" (click)="confirmingDiscard.set(false)" [disabled]="discarding()">
+              Cancelar
+            </button>
+          </div>
+        }
+
+        <h2>Histórico</h2>
+        @if (interview.messages.length === 0) {
+          <p>Ainda não há mensagens.</p>
+        } @else {
+          @for (message of interview.messages; track message.id) {
+            <article class="history-item">
+              <p class="muted">{{ role(message.role) }} · {{ when(message.createdAt) }}</p>
+              <p>{{ message.skipped ? 'Pulado.' : message.content }}</p>
+            </article>
+          }
+        }
+      </div>
+
+      <aside class="card">
+        <h2>O que já foi dito</h2>
+        <p class="muted">Somente respostas desta entrevista. Nada aqui é completado por fora.</p>
+        @if (collected().length === 0) {
+          <p>Nenhuma resposta ainda.</p>
+        } @else {
+          @for (item of collected(); track $index) {
+            <article class="history-item">
+              <p class="muted">{{ item.question || label(item.questionKey) }}</p>
+              <p>{{ item.skipped ? 'Pulado.' : item.answer }}</p>
+            </article>
+          }
+        }
+      </aside>
+    </div>
+  }
+</section>

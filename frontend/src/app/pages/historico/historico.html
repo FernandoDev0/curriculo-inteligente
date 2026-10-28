@@ -1,0 +1,43 @@
+<section class="page">
+  <h1>Corrigir resposta</h1>
+  <p><a [routerLink]="['/entrevista', id()]">Voltar à entrevista</a></p>
+
+  @if (loading()) {
+    <p role="status">Carregando o histórico…</p>
+  } @else if (error() && !interview()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else if (userMessages().length === 0) {
+    <p>Ainda não há resposta sua para corrigir.</p>
+  } @else {
+    @for (message of userMessages(); track message.id) {
+      <article class="card list-item">
+        <h2>{{ label(message.questionKey) }}</h2>
+        <p>{{ message.skipped ? 'Resposta pulada.' : message.content }}</p>
+        <button type="button" class="btn-quiet" (click)="edit(message)">Corrigir esta resposta</button>
+      </article>
+    }
+
+    @if (selectedId()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <div class="field">
+          <label for="correcao">Nova resposta</label>
+          <textarea id="correcao" rows="6" formControlName="correction"></textarea>
+          @if (form.controls.correction.touched && form.controls.correction.hasError('required')) {
+            <p class="field-error">Escreva a resposta corrigida.</p>
+          }
+        </div>
+        <button type="submit" class="btn-signal" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar correção' }}
+        </button>
+      </form>
+    }
+
+    @if (error()) {
+      <p class="banner-error" role="alert">{{ error() }}</p>
+    }
+    @if (note()) {
+      <p class="banner-ok" role="status">{{ note() }}</p>
+    }
+  }
+</section>

@@ -1,0 +1,39 @@
+<article class="page">
+  <p class="muted">Uso local · uma página A4</p>
+  <h1 class="hero-title">O que você conta, numa folha.</h1>
+  <hr class="rule" />
+  <p class="lede">
+    Este programa monta um currículo de uma página a partir de uma conversa. O navegador fala só com a API
+    nesta máquina. A chave do Google, se você quiser usá-la, fica no backend — nunca neste navegador.
+  </p>
+  <p>
+    A prévia segue o modelo de referência: Arial, títulos em azul-marinho, fios sob as seções, foto opcional
+    e texto selecionável. Sem barra de competência, sem segunda coluna e sem promessa de aprovação em triagem
+    automática.
+  </p>
+
+  @if (loading()) {
+    <p role="status">Carregando a sessão…</p>
+  } @else if (error()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="reload()">Tentar de novo</button>
+  } @else if (sessions.current()?.needsBootstrap) {
+    <p>Ainda não existe conta neste banco. A primeira pessoa cria o acesso local.</p>
+    <a class="btn-signal" routerLink="/entrar">Criar a conta local</a>
+  } @else if (!sessions.current()?.authenticated) {
+    <p>Entre com a conta local para continuar a entrevista ou abrir um currículo.</p>
+    <a class="btn-signal" routerLink="/entrar">Entrar</a>
+  } @else {
+    <p>A sessão está aberta{{ sessions.current()?.email ? ' para ' + sessions.current()?.email : '' }}.</p>
+    <div class="actions">
+      <a class="btn-signal" routerLink="/entrevistas">Ir para as entrevistas</a>
+      <a routerLink="/curriculos">Ver currículos</a>
+    </div>
+  }
+
+  <hr class="rule" />
+  <p class="muted">
+    Sem chave de IA dá para entrevistar, cadastrar, ver a prévia e pedir o PDF. Reescrita, resumo gerado,
+    aprofundamento adaptativo e a formulação da comparação com a vaga pedem a chave e o seu consentimento.
+  </p>
+</article>

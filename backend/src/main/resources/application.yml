@@ -1,0 +1,36 @@
+server:
+  address: 127.0.0.1
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/curriculo}
+    username: ${SPRING_DATASOURCE_USERNAME:curriculo}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+app:
+  gemini:
+    model: ${GEMINI_MODEL:gemini-3.5-flash}
+    image-model: ${GEMINI_IMAGE_MODEL:}
+    base-url: https://generativelanguage.googleapis.com
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

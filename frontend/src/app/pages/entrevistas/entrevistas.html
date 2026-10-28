@@ -1,0 +1,46 @@
+<section class="page">
+  <h1>Entrevistas</h1>
+  <p class="muted">Uma pergunta por vez. Dá para pausar, corrigir e voltar.</p>
+  <button type="button" class="btn-signal" (click)="create()" [disabled]="creating()">
+    {{ creating() ? 'Abrindo…' : 'Nova entrevista' }}
+  </button>
+
+  @if (loading()) {
+    <p role="status">Carregando entrevistas…</p>
+  } @else if (error()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="load(page())">Tentar de novo</button>
+  } @else if (items().length === 0) {
+    <p>Nenhuma entrevista ainda.</p>
+  } @else {
+    <div class="stack">
+      @for (item of items(); track item.id) {
+        <article class="card list-item">
+          <h2><a [routerLink]="['/entrevista', item.id]">Entrevista</a></h2>
+          <p>{{ status(item.status) }} · {{ stage(item.stage) }}</p>
+          @if (item.progressPercent != null) {
+            <p>Progresso: {{ item.progressPercent }}%</p>
+          }
+          @if (item.updatedAt || item.createdAt) {
+            <p class="muted">{{ when(item.updatedAt || item.createdAt) }}</p>
+          }
+        </article>
+      }
+    </div>
+    @if (totalPages() > 1) {
+      <div class="actions">
+        <button type="button" class="btn-quiet" (click)="load(page() - 1)" [disabled]="page() === 0 || loading()">
+          Página anterior
+        </button>
+        <button
+          type="button"
+          class="btn-quiet"
+          (click)="load(page() + 1)"
+          [disabled]="page() + 1 >= totalPages() || loading()"
+        >
+          Próxima página
+        </button>
+      </div>
+    }
+  }
+</section>

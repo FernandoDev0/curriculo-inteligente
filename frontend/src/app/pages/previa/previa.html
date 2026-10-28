@@ -1,0 +1,169 @@
+<section class="page">
+  <div class="no-print">
+    <h1>Prévia</h1>
+    <p class="muted">A folha abaixo é o documento. Ela não usa a cor da interface.</p>
+    <div class="actions">
+      <button type="button" class="btn-signal" (click)="requestPdf()" [disabled]="previewing() || loading()">
+        {{ previewing() ? 'Pedindo o PDF…' : 'Pedir PDF de prévia' }}
+      </button>
+      <a [routerLink]="['/curriculo', id(), 'editar']">Editar</a>
+      <a [routerLink]="['/curriculo', id(), 'aprovar']">Aprovar</a>
+    </div>
+    @if (previewError()) {
+      <p class="banner-error" role="alert">{{ previewError() }}</p>
+    }
+    @if (pageCountKnown() && (pageCount() ?? 0) > 1) {
+      <p class="banner-warn" role="alert">
+        A prévia tem {{ pageCount() }} páginas. O PDF definitivo só sai com uma página. Corte texto antes de aprovar
+        a exportação.
+      </p>
+    } @else if (pageCountKnown() && pageCount() === 1) {
+      <p class="banner-ok">A prévia coube em uma página.</p>
+    } @else if (previewFinished()) {
+      <p class="banner-warn">A resposta não informou o número de páginas.</p>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="no-print" role="status">Carregando o currículo…</p>
+  } @else if (error()) {
+    <p class="no-print banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="no-print btn-quiet" (click)="load()">Tentar de novo</button>
+  } @else {
+    <div class="desk">
+      <article class="a4" aria-label="Folha do currículo">
+        <header class="a4-header">
+          @if (showPhoto()) {
+            <img class="a4-photo" src="/api/v1/profile/photo" alt="Foto do perfil" (error)="photoBroken.set(true)" />
+          }
+          <h1>{{ header().fullName || 'Nome não informado' }}</h1>
+          @if (header().targetRole || resume()?.targetRole) {
+            <p class="role">{{ header().targetRole || resume()?.targetRole }}</p>
+          }
+          @if (place(header())) {
+            <p class="meta">{{ place(header()) }}</p>
+          }
+          @for (item of contacts(header()); track item.caption + item.label) {
+            <p class="contact-line">
+              {{ item.caption }}:
+              @if (item.href) {
+                <a [href]="item.href">{{ item.label }}</a>
+              } @else {
+                <span>{{ item.label }}</span>
+              }
+            </p>
+          }
+        </header>
+
+        @if (technologies()) {
+          <hr class="a4-rule" />
+          <p class="a4-tech">{{ technologies() }}</p>
+          <hr class="a4-rule" />
+        }
+
+        @if (summary()) {
+          <section>
+            <h2>Resumo profissional</h2>
+            <p>{{ summary() }}</p>
+          </section>
+        }
+
+        @if (experiences().length > 0) {
+          <section>
+            <h2>Experiência profissional</h2>
+            @for (item of experiences(); track $index) {
+              <p class="item-head">
+                <strong>{{ item.company }}</strong>
+                @if (item.roleTitle) {
+                  — {{ item.roleTitle }}
+                }
+                @if (period(item)) {
+                  · {{ period(item) }}
+                }
+              </p>
+              @if (item.projectLabel) {
+                <p class="project-line">{{ item.projectLabel }}</p>
+              }
+              @if (item.detailLevel === 'SUMMARY' && item.responsibilities) {
+                <p>{{ item.responsibilities }}</p>
+              }
+              @if (bullets(item).length > 0) {
+                <ul>
+                  @for (line of bullets(item); track line) {
+                    <li>{{ line }}</li>
+                  }
+                </ul>
+              }
+              @if (item.detailLevel !== 'SUMMARY' && item.tools) {
+                <p>Ferramentas: {{ item.tools }}</p>
+              }
+              @if (item.detailLevel !== 'SUMMARY' && item.results) {
+                <p>Resultados: {{ item.results }}</p>
+              }
+            }
+          </section>
+        }
+
+        @if (skillGroups().length > 0) {
+          <section>
+            <h2>Competências</h2>
+            @for (group of skillGroups(); track group.label) {
+              <p><strong>{{ group.label }}.</strong> {{ group.names }}</p>
+            }
+          </section>
+        }
+
+        @if (education().length > 0) {
+          <section>
+            <h2>Formação acadêmica</h2>
+            @for (item of education(); track $index) {
+              <p>
+                @if (item.level) {
+                  <strong>{{ item.level }}.</strong>
+                }
+                {{ educationLine(item) }}
+              </p>
+            }
+          </section>
+        }
+
+        @if (languages().length > 0) {
+          <section>
+            <h2>Idiomas</h2>
+            @for (item of languages(); track $index) {
+              <p>
+                <strong>{{ item.name }}.</strong>
+                Compreensão: {{ level(item.comprehension) }}. Leitura: {{ level(item.reading) }}. Escrita:
+                {{ level(item.writing) }}. Conversação: {{ level(item.conversation) }}.
+              </p>
+            }
+          </section>
+        }
+
+        @if (certifications().length > 0) {
+          <section>
+            <h2>Certificações</h2>
+            @for (item of certifications(); track $index) {
+              <p>{{ item.name }}@if (item.issuer) { · {{ item.issuer }} }@if (item.year) { · {{ item.year }} }</p>
+            }
+          </section>
+        }
+
+        @if (projects().length > 0) {
+          <section>
+            <h2>Projetos</h2>
+            @for (item of projects(); track $index) {
+              <p class="item-head"><strong>{{ item.name }}</strong></p>
+              @if (item.description) {
+                <p class="project-line">{{ item.description }}</p>
+              }
+              @if (item.url) {
+                <p><a [href]="item.url">{{ item.url }}</a></p>
+              }
+            }
+          </section>
+        }
+      </article>
+    </div>
+  }
+</section>

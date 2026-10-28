@@ -1,0 +1,42 @@
+<section class="page">
+  <h1>Diagnóstico</h1>
+  <p class="muted">Esta tela mostra a situação da integração. Ela não exibe a chave.</p>
+
+  @if (loading() && !status()) {
+    <p role="status">Lendo o diagnóstico…</p>
+  } @else if (!status() && error()) {
+    <p class="banner-error" role="alert">{{ error() }}</p>
+    <button type="button" class="btn-quiet" (click)="reload()">Tentar de novo</button>
+  } @else {
+    <section class="state-panel state-{{ displayState() }}" [attr.data-state]="displayState()">
+      <h2>{{ view().title }}</h2>
+      <p>{{ view().detail }}</p>
+      <p>Chave configurada: {{ status()?.keyConfigured ? 'sim' : 'não' }}.</p>
+      <p>Origem: {{ sourceLabel() }}.</p>
+      <p>Modelo: {{ status()?.model }}.</p>
+      <p>
+        Edição de imagem:
+        {{ status()?.imageEditingAvailable ? 'anunciada pelo modelo' : 'não anunciada' }}.
+      </p>
+      @if (status()?.lastTestAt) {
+        <p>Último teste: {{ when(status()?.lastTestAt) }}.</p>
+      }
+      @if (status()?.lastTestMessage) {
+        <p>{{ status()?.lastTestMessage }}</p>
+      }
+    </section>
+
+    @if (error()) {
+      <p class="banner-error" role="alert">{{ error() }}</p>
+    }
+
+    <div class="actions">
+      <button type="button" class="btn-signal" (click)="test()" [disabled]="testing()">
+        {{ testing() ? 'Testando…' : 'Testar conexão' }}
+      </button>
+      <button type="button" class="btn-quiet" (click)="reload()" [disabled]="loading() || testing()">
+        {{ loading() ? 'Atualizando…' : 'Atualizar leitura' }}
+      </button>
+    </div>
+  }
+</section>
